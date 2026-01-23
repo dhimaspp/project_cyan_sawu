@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "name": "project_cyan_sawu (Flutter)",
+            "program": "lib/main.dart",
+            "request": "launch",
+            "type": "dart"
+        }
+    ]
+}
