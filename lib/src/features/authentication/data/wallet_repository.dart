@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:uni_links/uni_links.dart';
+import 'package:app_links/app_links.dart';
 
 part 'wallet_repository.g.dart';
 
@@ -34,5 +34,5 @@ WalletRepository walletRepository(Ref ref) {
 
 @riverpod
 Stream<String?> deepLink(Ref ref) {
-  return linkStream;
+  return AppLinks().uriLinkStream.map((uri) => uri.toString());
 }

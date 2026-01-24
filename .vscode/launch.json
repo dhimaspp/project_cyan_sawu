@@ -5,6 +5,19 @@
             "program": "lib/main.dart",
             "request": "launch",
             "type": "dart"
+        },
+        {
+            "name": "project_cyan_sawu (Flutter)",
+            "program": "lib/main.dart",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "project_cyan_sawu (Flutter Pixel 9 Pro API 36)",
+            "program": "lib/main.dart",
+            "deviceId": "emulator-5556",
+            "request": "launch",
+            "type": "dart"
         }
     ]
 }

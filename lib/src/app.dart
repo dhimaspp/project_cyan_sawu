@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../src/core/theme/app_theme.dart';
 import '../../src/features/authentication/presentation/login_page.dart';
 
 class MyApp extends ConsumerWidget {
@@ -8,12 +7,16 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('🎨 MyApp building...');
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Project Cyan',
-      theme: AppTheme.light,
-      // darkTheme: AppTheme.dark,
-      // themeMode: ThemeMode.system,
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: Colors.white,
+        colorScheme: ColorScheme.light(primary: Colors.cyan, surface: Colors.white),
+      ),
       home: const LoginPage(),
     );
   }

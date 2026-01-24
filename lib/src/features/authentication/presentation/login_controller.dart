@@ -7,7 +7,7 @@ part 'login_controller.g.dart';
 @riverpod
 class LoginController extends _$LoginController {
   @override
-  FutureOr<void> build() {
+  FutureOr<void> build() async {
     // Listen to deep links for debugging/Manual Validation
     ref.listen(deepLinkProvider, (previous, next) {
       next.when(
@@ -18,6 +18,8 @@ class LoginController extends _$LoginController {
         loading: () {},
       );
     });
+    // Return void explicitly
+    return;
   }
 
   Future<void> signInWithGoogle() async {
