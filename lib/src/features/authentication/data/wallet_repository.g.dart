@@ -86,4 +86,4 @@ final class DeepLinkProvider
   }
 }
 
-String _$deepLinkHash() => r'6da3d29259c064e8ab0a5d96a46ecdd5fbc83480';
+String _$deepLinkHash() => r'b74d90f3f0a2da3a412dcde6ede2dfc95b315a60';

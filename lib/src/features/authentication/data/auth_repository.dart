@@ -13,7 +13,7 @@ class AuthRepository {
   User? get currentUser => _supabase.auth.currentUser;
 
   Future<void> signInWithGoogle() async {
-    const webClientId = '942355627042-ovup1qisis9ecppeigp1mh10fijpce8c.apps.googleusercontent.com';
+    const webClientId = '942355627042-gadv9dplqjoulvj8623iv0fje7pnh34k.apps.googleusercontent.com';
 
     // Google Sign In
     final googleSignIn = GoogleSignIn(serverClientId: webClientId);

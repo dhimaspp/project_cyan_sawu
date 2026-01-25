@@ -44,5 +44,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Phase 2: Core Prover Permissions -->
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to capture field report photos for seagrass monitoring.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs location access to record GPS coordinates for field report verification.</string>
 </dict>
 </plist>
