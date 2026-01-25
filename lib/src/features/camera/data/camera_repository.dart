@@ -67,15 +67,23 @@ class CameraRepository {
       throw Exception('Camera not initialized');
     }
 
+    // Capture photo
+    final XFile imageFile = await _cameraController!.takePicture();
+    final Uint8List rawImageBytes = await imageFile.readAsBytes();
+
+    return processCapture(userId: userId, rawImageBytes: rawImageBytes);
+  }
+
+  /// Processes a captured photo:
+  /// 1. Get GPS location (with mock detection)
+  /// 2. Apply watermark
+  /// 3. Generate hash
+  Future<CaptureResult> processCapture({required String userId, required Uint8List rawImageBytes}) async {
     // Step 1: Get location (throws if mock location detected)
     final position = await _locationService.getCurrentLocation();
     final capturedAt = DateTime.now().toUtc();
 
-    // Step 2: Capture photo
-    final XFile imageFile = await _cameraController!.takePicture();
-    final Uint8List rawImageBytes = await imageFile.readAsBytes();
-
-    // Step 3: Apply watermark
+    // Step 2: Apply watermark
     final watermarkedBytes = _watermarkService.applyWatermark(
       imageBytes: rawImageBytes,
       latitude: position.latitude,
@@ -84,7 +92,7 @@ class CameraRepository {
       userId: userId,
     );
 
-    // Step 4: Generate hash
+    // Step 3: Generate hash
     final dataHash = _hashService.generateHash(
       userId: userId,
       timestampMs: capturedAt.millisecondsSinceEpoch,

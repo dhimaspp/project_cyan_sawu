@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:camera/camera.dart' as cam;
 
-import '../data/camera_repository.dart';
 import '../data/location_service.dart';
 import 'camera_controller.dart' as ctrl;
 import 'widgets/watermark_overlay.dart';
@@ -21,6 +20,8 @@ class CameraPage extends ConsumerStatefulWidget {
 class _CameraPageState extends ConsumerState<CameraPage> with WidgetsBindingObserver {
   bool _isInitializing = true;
   String? _error;
+  cam.CameraController? _cameraController;
+  List<cam.CameraDescription>? _cameras;
 
   @override
   void initState() {
@@ -32,15 +33,20 @@ class _CameraPageState extends ConsumerState<CameraPage> with WidgetsBindingObse
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _cameraController?.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final cameraRepo = ref.read(cameraRepositoryProvider);
+    // App lifecycle handling for camera
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      return;
+    }
 
     if (state == AppLifecycleState.inactive) {
-      cameraRepo.dispose();
+      _cameraController?.dispose();
+      _cameraController = null;
     } else if (state == AppLifecycleState.resumed) {
       _initializeCamera();
     }
@@ -65,25 +71,54 @@ class _CameraPageState extends ConsumerState<CameraPage> with WidgetsBindingObse
         return;
       }
 
-      // Initialize camera
-      final cameraRepo = ref.read(cameraRepositoryProvider);
-      await cameraRepo.initialize();
+      // Get available cameras
+      _cameras = await cam.availableCameras();
 
-      setState(() {
-        _isInitializing = false;
-      });
+      if (_cameras == null || _cameras!.isEmpty) {
+        setState(() {
+          _error = 'No cameras available on this device';
+          _isInitializing = false;
+        });
+        return;
+      }
+
+      // Find back camera
+      final backCamera = _cameras!.firstWhere(
+        (camera) => camera.lensDirection == cam.CameraLensDirection.back,
+        orElse: () => _cameras!.first,
+      );
+
+      // Initialize camera controller
+      _cameraController = cam.CameraController(
+        backCamera,
+        cam.ResolutionPreset.high,
+        enableAudio: false,
+        imageFormatGroup: cam.ImageFormatGroup.jpeg,
+      );
+
+      await _cameraController!.initialize();
+
+      debugPrint('📷 Camera initialized successfully');
+
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = 'Failed to initialize camera: $e';
-        _isInitializing = false;
-      });
+      debugPrint('❌ Camera initialization failed: $e');
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to initialize camera: $e';
+          _isInitializing = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final cameraState = ref.watch(ctrl.cameraControllerProvider);
-    final cameraRepo = ref.read(cameraRepositoryProvider);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -97,11 +132,11 @@ class _CameraPageState extends ConsumerState<CameraPage> with WidgetsBindingObse
         title: const Text('Capture Report', style: TextStyle(color: Colors.white)),
       ),
       extendBodyBehindAppBar: true,
-      body: _buildBody(cameraState, cameraRepo),
+      body: _buildBody(cameraState),
     );
   }
 
-  Widget _buildBody(AsyncValue<void> cameraState, CameraRepository cameraRepo) {
+  Widget _buildBody(AsyncValue<void> cameraState) {
     if (_isInitializing) {
       return const Center(
         child: Column(
@@ -137,7 +172,7 @@ class _CameraPageState extends ConsumerState<CameraPage> with WidgetsBindingObse
       );
     }
 
-    if (!cameraRepo.isInitialized) {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
       return const Center(child: Text('Camera not available', style: TextStyle(color: Colors.white)));
     }
 
@@ -145,7 +180,7 @@ class _CameraPageState extends ConsumerState<CameraPage> with WidgetsBindingObse
       fit: StackFit.expand,
       children: [
         // Camera preview
-        CameraPreviewWidget(controller: cameraRepo.controller!),
+        CameraPreviewWidget(controller: _cameraController!),
 
         // Watermark overlay (live preview)
         const Positioned(left: 0, right: 0, bottom: 100, child: WatermarkOverlay()),
@@ -176,21 +211,41 @@ class _CameraPageState extends ConsumerState<CameraPage> with WidgetsBindingObse
   }
 
   Future<void> _onCapturePressed() async {
-    await ref.read(ctrl.cameraControllerProvider.notifier).capture();
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Camera not ready'), backgroundColor: Colors.orange));
+      return;
+    }
 
-    final state = ref.read(ctrl.cameraControllerProvider);
-    if (state.hasError) {
+    try {
+      // Capture using local controller and then process via repository
+      final imageFile = await _cameraController!.takePicture();
+      final imageBytes = await imageFile.readAsBytes();
+
+      // Use the camera controller notifier for processing
+      await ref.read(ctrl.cameraControllerProvider.notifier).captureWithImage(imageBytes);
+
+      final state = ref.read(ctrl.cameraControllerProvider);
+      if (state.hasError) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: ${state.error}'), backgroundColor: Colors.red));
+        }
+      } else if (!state.isLoading && mounted) {
+        // Capture successful - show confirmation and pop
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Photo captured and saved!'), backgroundColor: Colors.green));
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${state.error}'), backgroundColor: Colors.red));
+        ).showSnackBar(SnackBar(content: Text('Capture failed: $e'), backgroundColor: Colors.red));
       }
-    } else if (!state.isLoading && mounted) {
-      // Capture successful - show confirmation and pop
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Photo captured successfully!'), backgroundColor: Colors.green));
-      Navigator.of(context).pop();
     }
   }
 }

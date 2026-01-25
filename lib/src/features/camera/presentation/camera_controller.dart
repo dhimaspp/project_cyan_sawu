@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,8 +26,8 @@ class CameraController extends _$CameraController {
   /// Gets the last created report (if any)
   FieldReport? get lastReport => _lastReport;
 
-  /// Captures a photo with full verification flow and saves to local/remote
-  Future<void> capture() async {
+  /// Processes a captured photo and saves to local/remote
+  Future<void> captureWithImage(Uint8List imageBytes) async {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
@@ -37,10 +40,10 @@ class CameraController extends _$CameraController {
         throw Exception('User not authenticated');
       }
 
-      // Capture photo
-      final result = await cameraRepo.capture(userId: userId);
+      // Process captured photo
+      final result = await cameraRepo.processCapture(userId: userId, rawImageBytes: imageBytes);
       _lastCaptureResult = result;
-      debugPrint('📸 Photo captured: ${result.dataHash.substring(0, 8)}...');
+      debugPrint('📸 Photo processed: ${result.dataHash.substring(0, 8)}...');
 
       // Save to local storage and sync to Supabase
       final report = await reportRepo.saveAndSync(result);
