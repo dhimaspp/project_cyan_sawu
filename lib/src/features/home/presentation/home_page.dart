@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../authentication/data/auth_repository.dart';
 import '../../camera/presentation/camera_page.dart';
+import '../../reports/presentation/reports_page.dart';
 
 /// Minimal home page displayed after successful authentication
 class HomePage extends ConsumerWidget {
@@ -56,6 +57,17 @@ class HomePage extends ConsumerWidget {
                   textStyle: const TextStyle(fontSize: 18),
                 ),
               ),
+              const SizedBox(height: 16),
+              // View Reports button
+              OutlinedButton.icon(
+                onPressed: () => _navigateToReports(context),
+                icon: const Icon(Icons.list_alt),
+                label: const Text('View Reports'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(fontSize: 18),
+                ),
+              ),
               const SizedBox(height: 48),
             ],
           ),
@@ -66,6 +78,10 @@ class HomePage extends ConsumerWidget {
 
   void _navigateToCamera(BuildContext context) {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CameraPage()));
+  }
+
+  void _navigateToReports(BuildContext context) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReportsPage()));
   }
 
   void _showLogoutDialog(BuildContext context, WidgetRef ref) {

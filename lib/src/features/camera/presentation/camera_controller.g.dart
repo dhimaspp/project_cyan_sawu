@@ -33,7 +33,7 @@ final class CameraControllerProvider
   CameraController create() => CameraController();
 }
 
-String _$cameraControllerHash() => r'1b46f97f57e15ec2430d9c9a78162639e73e8933';
+String _$cameraControllerHash() => r'f1d910720202bed5b9c683e8d3f31fccd1b5a469';
 
 abstract class _$CameraController extends $AsyncNotifier<void> {
   FutureOr<void> build();

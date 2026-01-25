@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'src/app.dart';
 
 void main() async {
@@ -9,6 +10,10 @@ void main() async {
 
   // Load environment variables from .env file
   await dotenv.load(fileName: '.env');
+
+  // Initialize Hive for local storage
+  await Hive.initFlutter();
+  debugPrint('✅ Hive initialized');
 
   // Get Supabase credentials from .env
   final supabaseUrl = dotenv.env['PUBLIC_SUPABASE_URL'];
