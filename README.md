@@ -337,3 +337,4 @@ dependencies:
 ## 9. Proof of Work
 - [View Proof of Work (Video/Docs)](https://drive.google.com/file/d/1qgqnGRR4csy6YwrtOuS5k3wC1bjanJt5/view?usp=sharing)
 - [Download APK (Release)](https://drive.google.com/file/d/1QbPluhQ7b_YbGeorG4l8Kf-M68mvLMxR/view?usp=sharing)
+- [Success Data Sync to Supabase](https://drive.google.com/file/d/1gNBZSw4PZXxo6bn9GUUpor0OGhwb17PD/view?usp=sharing)
