@@ -167,26 +167,144 @@ create table public.field_reports (
 
 ## 6. Implementation Roadmap (Grant Timeline)
 
-### Phase 1: Setup & Auth (Week 1)
+### Phase 1: Setup & Auth (Week 1) ✅
 - [ ] Setup Flutter Project & Supabase Project.
 - [ ] Implementasi Login (Email/Social).
 - [ ] Integrasi Phantom Deep Link (Get Wallet Address).
 
-### Phase 2: The Core "Prover" (Week 2)
+### Phase 2: The Core "Prover" (Week 2) ✅
 - [ ] Build Custom Camera UI.
 - [ ] Implementasi Watermarking Logic.
 - [ ] Implementasi SHA-256 Hashing Logic.
 
-### Phase 3: Sync & Dashboard (Week 3)
+### Phase 3: Sync & Dashboard (Week 3) ✅
 - [ ] Setup Hive untuk Offline Storage.
 - [ ] Build "Background Sync" mechanism.
 - [ ] Buat dashboard admin sederhana (Web) untuk melihat peta sebaran foto.
 
-### Phase 4: Testing & Demo (Week 4)
+### Phase 4: Testing & Demo (Week 4) 🔲
 - [ ] Field Test (Simulasi lapangan).
 - [ ] Record Video Demo untuk submission Grant (Tunjukkan flow: Foto Offline -> Online -> Sync -> Hash muncul di DB).
 
-## 7. Dependencies (pubspec.yaml snippet)
+---
+
+## 7. Current Implementation Status
+
+*Last Updated: 2026-01-28*
+
+### 7.1 Completed Features
+
+#### ✅ Home Page (`lib/src/features/home/`)
+Fully implemented main dashboard screen after authentication.
+
+**UI Components:**
+- Welcome header displaying current user email
+- **Capture Report** button (primary FilledButton) - navigates to CameraPage
+- **View Reports** button (secondary OutlinedButton) - navigates to ReportsPage
+- Sign out action in AppBar with confirmation dialog
+
+**Technical Details:**
+- Built with `ConsumerWidget` using Riverpod
+- Integrates with `AuthRepository` for logout functionality
+- Clean Material 3 design with proper spacing and typography
+
+---
+
+#### ✅ Reports Page (`lib/src/features/reports/`)
+Complete reports management system with offline-first architecture.
+
+##### 7.1.1 Domain Layer (`domain/field_report.dart`)
+**`FieldReport` Model:**
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `id` | `String` | Local UUID v4 identifier |
+| `imageBytes` | `Uint8List` | Captured image with watermark |
+| `latitude` | `double` | GPS latitude |
+| `longitude` | `double` | GPS longitude |
+| `capturedAt` | `DateTime` | UTC timestamp of capture |
+| `userId` | `String` | Supabase user ID |
+| `dataHash` | `String` | SHA-256 verification hash |
+| `syncStatus` | `SyncStatus` | Current sync state |
+| `remoteId` | `String?` | Supabase record ID (after sync) |
+| `photoUrl` | `String?` | Supabase Storage URL (after sync) |
+| `errorMessage` | `String?` | Sync failure reason |
+
+**`SyncStatus` Enum:**
+- `pending` - Saved locally, awaiting sync
+- `syncing` - Currently uploading to Supabase
+- `synced` - Successfully uploaded and recorded
+- `failed` - Sync failed, requires retry
+
+##### 7.1.2 Data Layer
+**`LocalReportStorage` (`data/local_report_storage.dart`):**
+- Hive-based NoSQL storage for offline persistence
+- Box name: `field_reports`
+- JSON serialization with Base64 image encoding
+- Methods: `saveReport`, `getAllReports`, `updateReport`, `deleteReport`, `getReport`, `getPendingReports`
+- Automatic sorting by capture date (newest first)
+- User-scoped queries (filters by userId)
+
+**`RemoteReportService` (`data/remote_report_service.dart`):**
+- Supabase Storage integration for photo uploads
+- Bucket: `evidence-photos`
+- Path structure: `{userId}/{reportId}.jpg`
+- Table: `field_reports` (matches PRD schema)
+- Database fields: `user_id`, `photo_url`, `gps_lat`, `gps_long`, `captured_at`, `data_hash`, `status`
+
+**`ReportRepository` (`data/report_repository.dart`):**
+- Unified interface for local + remote operations
+- **Offline-First Flow:**
+  1. Generate UUID v4 for local ID
+  2. Save to Hive with `pending` status
+  3. Attempt sync (update to `syncing`)
+  4. On success: update with `synced` status, `remoteId`, `photoUrl`
+  5. On failure: update with `failed` status and error message
+- Retry mechanism via `retrySyncReport(reportId)`
+- Riverpod provider with dependency injection
+
+##### 7.1.3 Presentation Layer (`presentation/reports_page.dart`)
+**Main Page Features:**
+- `ConsumerStatefulWidget` with manual state management
+- Pull-to-refresh via `RefreshIndicator`
+- Empty state with icon and helpful text
+- Loading indicator during data fetch
+
+**Report List Item:**
+- Thumbnail preview (60x60px) from local image bytes
+- Formatted date/time display
+- GPS coordinates with N/S/E/W indicators
+- Hash preview (first 12 characters + ellipsis)
+- Visual sync status indicators:
+  - ✅ Green cloud icon for synced
+  - 🕐 Orange upload icon for pending
+  - 🔄 CircularProgressIndicator for syncing
+  - ❌ Red error icon with retry button for failed
+
+**Report Detail Bottom Sheet:**
+- Draggable scrollable sheet (50-95% height)
+- Full-size photo preview
+- Complete metadata display:
+  - Captured date/time
+  - GPS location
+  - Sync status
+  - Full SHA-256 hash (monospace font)
+  - Remote ID (if synced)
+  - Error message (if failed, in red)
+
+---
+
+### 7.2 Implementation Progress Summary
+
+| Phase | Status | Notes |
+| :--- | :---: | :--- |
+| Phase 1: Setup & Auth | ✅ Complete | Login, logout, Supabase integration |
+| Phase 2: Core "Prover" | ✅ Complete | Camera, watermarking, SHA-256 hashing |
+| Phase 3: Sync & Dashboard | ✅ Complete | Hive offline storage, Supabase sync, Reports page |
+| Phase 4: Testing & Demo | 🔲 Pending | Field testing and video demo |
+
+---
+
+## 8. Dependencies (pubspec.yaml snippet)
 ```yaml
 dependencies:
   flutter:
